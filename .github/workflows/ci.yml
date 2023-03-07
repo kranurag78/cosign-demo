@@ -1,0 +1,30 @@
+name: cosign 2.0
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  build:
+    name: check for cosign 2.0 release
+    runs-on: ubuntu-20.04
+    permissions: 
+      id-token: write 
+    steps:
+      - name: Install Cosign 
+        uses: sigstore/cosign-installer@main
+        with:
+          cosign-release: 'v2.0.0'
+
+      - uses: imjasonh/setup-crane@v0.1
+
+      - name: sign with cosign
+        run: |
+          crane version
+          cosign version
+          IMAGE=ttl.sh/$(uuidgen | head -c 8 | tr 'A-Z' 'a-z')
+          crane cp kubearmor/kubearmor:latest $IMAGE:latest
+          export DIGEST=$(crane digest $IMAGE:latest)
+          echo $DIGEST
+          cosign sign -r $IMAGE@$DIGEST --yes
